@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Recepción de Documentos Shipping · Pluma Nacional</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar" id="topbar"></div>
+  <div id="dataBanner" style="margin-top:18px"></div>
+
+  <div class="cbar">
+    <div>
+      <div class="plbl">Periodo</div>
+      <div class="pills" id="periodPills"></div>
+      <div class="pill-note">
+        <span style="color:var(--aw)">*</span> Semanas de transición entre meses.
+        Se excluyen los embarques <b style="color:#8aa0b8">American Mail</b>, el 2 de enero y las recepciones
+        a partir de las 12:00 hrs (quedan en la tabla, pero no promedian).
+      </div>
+    </div>
+    <div class="badge"><div class="bdot"></div><span id="sourceBadge">—</span></div>
+  </div>
+
+  <div class="mtabs" id="mainTabs">
+    <div class="mtab active" data-tab="tabOp">Operativo</div>
+    <div class="mtab" data-tab="tabSt">Análisis estadístico</div>
+  </div>
+
+  <!-- ══════════════ OPERATIVO ══════════════ -->
+  <div class="tc active" id="tabOp">
+
+    <div class="kgrid" id="kpiGrid"></div>
+
+    <div class="card">
+      <div class="ctit">Hora promedio de recepción por semana</div>
+      <div class="csub">
+        <div class="lgd">
+          <div class="lgdi"><div class="lgdd" style="background:#4d7cfe"></div>Recepción de documentos</div>
+          <div class="lgdi"><div class="lgdd" style="background:#00e5b4"></div>Recepción de datos de transporte</div>
+        </div>
+      </div>
+      <div class="cw tall"><canvas id="mTrend"></canvas></div>
+    </div>
+
+    <div id="volWrap" class="hidden">
+      <div class="two">
+        <div class="card">
+          <div class="ctit">Guías por día de la semana</div>
+          <div class="csub">Carga de recepción a lo largo de la semana</div>
+          <div class="cw"><canvas id="mDiaChart"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="ctit">Volumen por semana</div>
+          <div class="csub">Guías con recepción registrada</div>
+          <div class="cw"><canvas id="mVM"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctit">Resumen semanal</div>
+      <div class="csub">Hora promedio por semana · el promedio del mes cierra cada bloque</div>
+      <div class="twrap tall">
+        <table>
+          <thead><tr><th>Mes</th><th>Semana</th><th>Fechas</th><th class="c">Guías</th>
+            <th class="c" style="color:#4d7cfe">Prom. docs</th>
+            <th class="c" style="color:#00e5b4">Prom. transporte</th></tr></thead>
+          <tbody id="mSumTbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="ctit">Detalle por guía</div>
+      <div class="csub">Hora exacta · tipo de embarque · ⚠ señala docs y transporte registrados en días distintos</div>
+      <div class="frow">
+        <div class="fi"><span class="flbl">Mes</span><select id="mMes"></select></div>
+        <div class="fi"><span class="flbl">Semana</span><select id="mSem"></select></div>
+        <div class="fi"><span class="flbl">Día</span><select id="mDia"></select></div>
+      </div>
+      <div class="twrap tall">
+        <table>
+          <thead><tr><th>Guía</th><th>Fecha</th><th>Tipo</th><th>Semana</th><th>Mes</th>
+            <th class="c" style="color:#4d7cfe">Docs</th>
+            <th class="c" style="color:#00e5b4">Transporte</th><th>Nota</th></tr></thead>
+          <tbody id="mDetTbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════ ESTADÍSTICO ══════════════ -->
+  <div class="tc" id="tabSt">
+    <div class="snav" id="statNav"></div>
+    <div id="statSections">
+
+      <div class="ss active" id="ss-cc">
+        <div class="card">
+          <div class="ctit">Carta de control I-MR — horas de recepción <span class="hide-all-btn" id="hbMCC">● Ocultar todo</span></div>
+          <div class="csub">¿La llegada de información de Shipping es estable?</div>
+          <span class="info-toggle" data-infoid="info-mcc">ℹ ¿Cómo leer esta gráfica?</span>
+          <div class="info-panel" id="info-mcc">
+            <strong>¿Qué representa?</strong> La hora media a la que llega la información cada semana, con sus
+            límites de control.<br>
+            <strong>Cómo se calculan.</strong> Con el rango móvil entre semanas consecutivas:
+            <span class="formula">σ̂ = MR̄ / 1.128 &nbsp;·&nbsp; LCS/LCI = x̄ ± 3σ̂</span>
+            La versión anterior recortaba los límites a mano entre las 04:00 y las 12:00 hrs. Eso no es un límite
+            estadístico sino un recorte visual: hacía que ninguna semana pudiera salirse nunca. Ahora los límites
+            salen del propio proceso y sí detectan semanas anormales.<br>
+            <strong>¿Qué miro?</strong> Un punto rojo por encima del LCS es una semana en la que la información
+            llegó sistemáticamente más tarde de lo que el proceso considera normal — eso sí merece investigarse.
+          </div>
+          <div class="frow">
+            <div class="fi"><span class="flbl">Serie</span>
+              <select id="ccSerie">
+                <option value="docs">Recepción de documentos</option>
+                <option value="trans">Recepción de datos de transporte</option>
+              </select></div>
+          </div>
+          <div class="cw tall"><canvas id="mCC"></canvas></div>
+          <div class="csub" id="mccNote" style="margin:12px 0 0"></div>
+        </div>
+      </div>
+
+      <div class="ss" id="ss-bp">
+        <div class="card">
+          <div class="ctit">Box plot — distribución de horas</div>
+          <div class="csub">Docs y datos de transporte, lado a lado</div>
+          <span class="info-toggle" data-infoid="info-mbp">ℹ ¿Cómo leer esta gráfica?</span>
+          <div class="info-panel" id="info-mbp">
+            <strong>¿Qué representa?</strong> Para cada tipo de embarque (o mes), la distribución de horas de llegada.
+            La caja va de Q1 a Q3 y la línea gruesa es la mediana.<br>
+            <strong>Alto vs ancho.</strong> Una caja alta en el eje significa que esa información llega tarde;
+            una caja <em>ancha</em> significa que llega de forma irregular, que suele ser el problema real:
+            un tipo que siempre llega a las 07:00 se puede planear, uno que llega entre las 05:00 y las 10:00 no.<br>
+            <strong>Cuantiles interpolados</strong> (tipo 7) y bigotes hasta el dato real dentro de las vallas de Tukey.
+            Se omiten los grupos con menos de 3 guías.
+          </div>
+          <div class="frow">
+            <div class="fi"><span class="flbl">Agrupar por</span>
+              <select id="bpGrp">
+                <option value="tipo">Tipo de embarque</option>
+                <option value="mes">Mes</option>
+              </select></div>
+          </div>
+          <div class="cw tall"><canvas id="mBP"></canvas></div>
+          <div class="csub" id="mbpNote" style="margin:12px 0 0"></div>
+        </div>
+      </div>
+
+      <div class="ss" id="ss-pa">
+        <div class="card">
+          <div class="ctit">Pareto — retraso acumulado por tipo</div>
+          <div class="csub">¿Dónde se concentran realmente los retrasos?</div>
+          <span class="info-toggle" data-infoid="info-mpa">ℹ ¿Cómo leer esta gráfica?</span>
+          <div class="info-panel" id="info-mpa">
+            <strong>Qué mide.</strong> Horas de retraso <em>acumuladas</em> sobre las 06:00 hrs, que es la referencia
+            operativa del área.<br>
+            <strong>Por qué así.</strong> Ordenar por «hora promedio» compara implícitamente contra la medianoche y
+            trata igual a un tipo con dos guías tardías que a uno con cuarenta ligeramente tarde. Sumando el retraso
+            sobre la referencia, cada tipo pesa lo que de verdad cuesta al equipo.<br>
+            <strong>La línea naranja</strong> marca el porcentaje acumulado: donde cruza el 80 %, todo lo que queda a
+            la izquierda es el grupo por el que conviene empezar.
+          </div>
+          <div class="frow">
+            <div class="fi"><span class="flbl">Métrica</span>
+              <select id="paMetric">
+                <option value="docs">Recepción de documentos</option>
+                <option value="trans">Recepción de datos de transporte</option>
+              </select></div>
+          </div>
+          <div class="cw tall"><canvas id="mPA"></canvas></div>
+          <div class="csub" id="mpaNote" style="margin:12px 0 0"></div>
+        </div>
+      </div>
+
+      <div class="ss" id="ss-td">
+        <div class="card">
+          <div class="ctit">Tendencia <span class="hide-all-btn" id="hbMTD">● Ocultar todo</span></div>
+          <div class="csub">¿Los documentos llegan cada vez más temprano o más tarde?</div>
+          <span class="info-toggle" data-infoid="info-mtd">ℹ ¿Cómo leer esta gráfica?</span>
+          <div class="info-panel" id="info-mtd">
+            <strong>¿Qué representa?</strong> La hora media semanal (línea sólida) con su media móvil de 3 semanas
+            <b>centrada</b> (línea punteada).<br>
+            <strong>Centrada, no rezagada.</strong> La ventana es [i−1, i, i+1]: así el punto de inflexión de la
+            tendencia coincide con la semana en que realmente ocurrió el cambio, en lugar de aparecer dos semanas
+            después. Por eso la línea punteada no existe en el primer ni en el último punto.<br>
+            <strong>¿Qué miro?</strong> Si la punteada baja, Shipping está entregando cada vez más temprano.
+          </div>
+          <div class="cw tall"><canvas id="mTD"></canvas></div>
+          <div class="csub" id="mtdNote" style="margin:12px 0 0"></div>
+        </div>
+      </div>
+
+      <div class="ss" id="ss-di">
+        <div class="two">
+          <div class="card">
+            <div class="ctit">Distribución — documentos</div>
+            <div class="csub">Histograma de horas de llegada · bins de 15 min</div>
+            <span class="info-toggle" data-infoid="info-mdi">ℹ ¿Cómo leer esta gráfica?</span>
+            <div class="info-panel" id="info-mdi">
+              <strong>¿Qué representa?</strong> Cuántas guías llegaron en cada franja de 15 minutos.
+              La barra más alta es el horario habitual de entrega.<br>
+              <strong>Las curvas ajustadas</strong> (normal y log-normal) se calculan por diferencia de la función
+              acumulada dentro de cada bin, no evaluando la densidad en el punto medio — que sólo sería exacto si
+              el bin fuera infinitesimal.<br>
+              <strong>¿Qué decide?</strong> Si la mayoría llega antes de las 07:00, el equipo tiene margen para
+              trabajar; una segunda joroba a media mañana indica un flujo paralelo que conviene separar del análisis.
+            </div>
+            <div class="cw"><canvas id="mDI1"></canvas></div>
+          </div>
+          <div class="card">
+            <div class="ctit">Distribución — datos de transporte</div>
+            <div class="csub">Histograma de horas de llegada · bins de 15 min</div>
+            <div class="cw"><canvas id="mDI2"></canvas></div>
+          </div>
+        </div>
+        <div class="card"><div class="csub" id="mdiNote" style="margin:0"></div></div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer id="appFooter"></footer>
+</div>
+
+<!-- Librerías servidas en local: la herramienta funciona sin conexión y abriendo el archivo directamente -->
+<script src="assets/vendor/chart.umd.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/data/demo.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/page-shipping.js"></script>
+</body>
+</html>

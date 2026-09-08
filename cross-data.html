@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cross Data · Pluma Nacional</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔗</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar" id="topbar"></div>
+  <div id="dataBanner" style="margin-top:18px"></div>
+
+  <div class="cbar">
+    <div>
+      <div class="plbl">Periodo</div>
+      <div class="pills" id="periodPills"></div>
+      <div class="pill-note">Sólo se cruzan las guías presentes en <b style="color:#8aa0b8">los dos reportes</b>
+        y con hora de recepción utilizable.</div>
+    </div>
+    <div class="badge"><div class="bdot"></div><span id="sourceBadge">—</span></div>
+  </div>
+
+  <div class="xhero">
+    <div style="font-family:var(--mn);font-size:9px;color:var(--mt);text-transform:uppercase;letter-spacing:.1em;margin-bottom:12px">
+      Flujo operativo completo
+    </div>
+    <div class="xflow">
+      <div class="fstep m">📋 Recepción de docs</div><span class="farr">→</span>
+      <div class="fstep m">🚛 Datos de transporte</div><span class="farr">→</span>
+      <div class="fstep t">🧾 Elaboración de factura</div><span class="farr">→</span>
+      <div class="fstep t">📄 Solicitud de carta porte</div>
+    </div>
+    <div class="xdesc">
+      Los dos primeros pasos los controla Shipping; los dos últimos, el equipo de Import/Export.
+      Esta página une ambos reportes por número de guía para responder una sola pregunta:
+      <b style="color:#e8edf5">¿el tiempo de elaboración depende de la hora a la que llegan los documentos?</b>
+      La respuesta decide dónde tiene sentido invertir esfuerzo de mejora.
+    </div>
+  </div>
+
+  <div class="kgrid" id="kpiGrid"></div>
+  <div class="verdict ok" id="xVerdict" style="margin-bottom:18px"></div>
+
+  <div class="card">
+    <div class="ctit">Hora de llegada vs tiempo de elaboración</div>
+    <div class="csub">Una guía por punto · la recta amarilla es el ajuste por mínimos cuadrados</div>
+    <span class="info-toggle" data-infoid="info-xs">ℹ ¿Cómo leer esta gráfica?</span>
+    <div class="info-panel" id="info-xs">
+      <strong>¿Qué representa?</strong> Cada punto es una guía: en el eje horizontal la hora a la que llegaron
+      sus documentos, en el vertical los minutos que tardó su elaboración.<br>
+      <strong>¿Qué buscar?</strong> Si los documentos tardíos causaran demoras, los puntos formarían una diagonal
+      ascendente. Una nube sin forma significa que las dos cosas son independientes.<br>
+      <strong>Cuidado con la recta.</strong> La pendiente siempre se puede calcular, incluso sobre datos sin relación.
+      Sólo tiene sentido leerla junto al coeficiente de correlación y su p-valor:
+      <span class="formula">Spearman ρ sobre rangos (robusto a outliers) · p por transformación z de Fisher: z = artanh(r)·√(n−3)</span>
+      Se usa Spearman como referencia principal porque Pearson asume relación lineal y se deja arrastrar por
+      las guías extremas.
+    </div>
+    <div class="frow">
+      <div class="fi"><span class="flbl">Colorear por</span>
+        <select id="xCB">
+          <option value="p">Persona</option>
+          <option value="t">Tipo de embarque</option>
+          <option value="m">Mes</option>
+        </select></div>
+    </div>
+    <div class="cw tall"><canvas id="xSC"></canvas></div>
+    <div class="csub" id="xscNote" style="margin:12px 0 0"></div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <div class="ctit">Pareto combinado</div>
+      <div class="csub">¿Qué tipos pesan en las dos etapas a la vez?</div>
+      <span class="info-toggle" data-infoid="info-xp">ℹ ¿Cómo leer esta gráfica?</span>
+      <div class="info-panel" id="info-xp">
+        <strong>Dos medidas superpuestas.</strong> Las barras naranjas suman los minutos totales de elaboración
+        de cada tipo; las azules cuentan cuántas de sus guías tuvieron documentos después de las 07:00.<br>
+        <strong>¿Qué decide?</strong> Un tipo alto en naranja pero bajo en azul es un problema de elaboración
+        (lo resuelve el equipo). Alto en las dos puede ser un problema de entrada. La línea amarilla marca
+        el 80 % acumulado del tiempo.
+      </div>
+      <div class="cw"><canvas id="xPA"></canvas></div>
+    </div>
+    <div class="card">
+      <div class="ctit">Correlación a nivel semana</div>
+      <div class="csub">Un punto por semana en lugar de por guía</div>
+      <span class="info-toggle" data-infoid="info-xc">ℹ ¿Cómo leer esta gráfica?</span>
+      <div class="info-panel" id="info-xc">
+        <strong>Por qué agregar por semana.</strong> Promediar reduce el ruido de cada guía individual y deja ver
+        si existe un patrón de fondo.<br>
+        <strong>Por qué no basta.</strong> Al agregar quedan muy pocos puntos, así que el coeficiente se vuelve
+        inestable y puede aparecer una relación que a nivel guía no existe (falacia ecológica).
+        Es un complemento del scatter de arriba, no un sustituto.
+      </div>
+      <div class="cw"><canvas id="xCR"></canvas></div>
+      <div class="csub" id="xcrNote" style="margin:12px 0 0"></div>
+    </div>
+  </div>
+
+  <footer id="appFooter"></footer>
+</div>
+
+<!-- Librerías servidas en local: la herramienta funciona sin conexión y abriendo el archivo directamente -->
+<script src="assets/vendor/chart.umd.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/data/demo.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/charts.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/page-cross.js"></script>
+</body>
+</html>

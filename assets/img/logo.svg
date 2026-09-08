@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img"
+     aria-label="Marcador de logotipo — reemplaza este archivo por el logo real">
+  <defs>
+    <pattern id="h" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="8" height="8" fill="none"/>
+      <rect width="4" height="8" fill="#5a7a99" opacity=".07"/>
+    </pattern>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#141c24"/>
+      <stop offset="1" stop-color="#1a2332"/>
+    </linearGradient>
+  </defs>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#g)" stroke="#243447" stroke-width="1.5"/>
+  <rect x="1" y="1" width="62" height="62" rx="12" fill="url(#h)"/>
+  <text x="32" y="38" text-anchor="middle" fill="#00e5b4"
+        font-family="'DM Mono', ui-monospace, monospace" font-size="21" font-weight="600"
+        letter-spacing="1">PN</text>
+  <text x="32" y="50" text-anchor="middle" fill="#5a7a99"
+        font-family="'DM Mono', ui-monospace, monospace" font-size="6" letter-spacing=".8">LOGO</text>
+</svg>

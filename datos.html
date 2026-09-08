@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Datos y validación · Pluma Nacional</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📥</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/css/app.css">
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar" id="topbar"></div>
+  <div id="dataBanner" style="margin-top:18px"></div>
+
+  <div class="card">
+    <div class="ctit">Cargar el Master de Millennium</div>
+    <div class="csub">El archivo se procesa en tu navegador · no se sube a ningún servidor</div>
+
+    <input type="file" id="fileInput" accept=".xlsx,.xlsm,.xls,.csv" class="hidden">
+    <div class="drop" id="drop">
+      <span class="d-icon">📄</span>
+      <div class="d-tit">Arrastra aquí tu <b>Master__XX.xlsx</b> o haz clic para elegirlo</div>
+      <div class="d-sub">
+        Se leen las columnas GUIANUMBER · ACTIVITY_ESA · DATETIMESTAMP · STATUSID · CREATEDBY · SHIPMENTTYPE · COMMENTS.<br>
+        Los nombres se detectan solos aunque cambien de mayúsculas, acentos o espacios.
+      </div>
+    </div>
+
+    <div class="frow" style="margin-top:18px">
+      <button class="btn primary" id="btnApply" disabled>Usar este archivo</button>
+      <button class="btn danger" id="btnReset">Volver al dataset demo</button>
+      <button class="btn" id="btnExport">Descargar datos procesados (JSON)</button>
+    </div>
+
+    <div class="log" id="log" style="margin-top:14px">Esperando archivo…</div>
+
+    <span class="info-toggle" data-infoid="info-pipe">ℹ ¿Qué le hace exactamente al archivo?</span>
+    <div class="info-panel" id="info-pipe">
+      <strong>1 · Filtro base.</strong> Se conservan sólo las filas con <code>STATUSID = 8</code> (guía completada)
+      y cuya fecha cae dentro del calendario laboral lunes–viernes definido para 2026.<br>
+      <strong>2 · Normalización.</strong> Las actividades vienen con entidades HTML
+      (<code>Elaboraci&amp;oacute;n</code>): se decodifican, se pasan a minúsculas y se les quitan los acentos antes
+      de comparar. Los números de guía pierden los ceros a la izquierda para que <code>0082</code> y <code>82</code>
+      sean la misma.<br>
+      <strong>3 · Tiempos.</strong> Por cada guía se toma la primera «Elaboración de factura» y la primera
+      «Solicitud de carta porte»; la diferencia en minutos es el indicador. Se descartan las guías que no tienen
+      las dos actividades. La guía se atribuye a quien la cierra.<br>
+      <strong>4 · Shipping.</strong> Se toman «Recepción de Docs» y «Recepción de datos de Transporte».
+      Se excluyen los embarques American Mail y el 2 de enero, y las recepciones a partir de las 12:00 hrs
+      quedan registradas pero no entran en los promedios.<br>
+      <strong>5 · Personas.</strong> Sólo entran al reporte quienes operan de forma rutinaria; el resto de usuarios
+      se descarta y se reporta en el registro de arriba.<br>
+      <strong>6 · Fechas.</strong> Los timestamps de Excel son números sin zona horaria. Se convierten a hora local
+      descomponiendo el serial, no con aritmética sobre epoch UTC — que desplazaría cada hora tantas horas como
+      diga el huso del navegador.<br><br>
+      Todos los resúmenes semanales y mensuales se <b>calculan</b> a partir de estas dos tablas, así que no pueden
+      desincronizarse del detalle.
+    </div>
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <div class="ctit">Comprobaciones de integridad</div>
+      <div class="csub">Se ejecutan sobre el dataset activo</div>
+      <div id="checks"></div>
+    </div>
+    <div class="card">
+      <div class="ctit">Resumen por mes</div>
+      <div class="csub">Tiempos y horas de recepción</div>
+      <div class="twrap">
+        <table>
+          <thead><tr><th>Mes</th><th class="c">Guías</th><th class="r">Mediana</th><th class="r">Promedio</th>
+            <th class="c">Shipping</th><th class="c">Docs</th><th class="c">Transp.</th></tr></thead>
+          <tbody id="mesTbl"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctit">Resumen por persona</div>
+    <div class="csub">Cuantiles por interpolación lineal (tipo 7) · el rango Q1–Q3 mide consistencia</div>
+    <div class="twrap tall">
+      <table>
+        <thead><tr><th>Persona</th><th class="c">Guías</th><th class="r">Mediana</th><th class="r">Promedio</th>
+          <th class="r">Q1 – Q3</th><th class="r">Máximo</th></tr></thead>
+        <tbody id="sumTbl"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer id="appFooter"></footer>
+</div>
+
+<!-- SheetJS en local: el Master nunca sale del navegador -->
+<script src="assets/vendor/xlsx.full.min.js"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/stats.js"></script>
+<script src="assets/data/demo.js"></script>
+<script src="assets/js/store.js"></script>
+<script src="assets/js/ingest.js"></script>
+<script src="assets/js/ui.js"></script>
+<script src="assets/js/page-datos.js"></script>
+</body>
+</html>
