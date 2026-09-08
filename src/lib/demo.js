@@ -1,14 +1,9 @@
-/* ==========================================================================
-   demo.js — Dataset de ejemplo (Master_3_de_julio.xlsx, ene–jul 2026).
+/**
+ * demo.js — Dataset de ejemplo (Master_3_de_julio.xlsx, ene–jul 2026).
+ * Se usa mientras no se haya cargado un Master propio.
+ */
 
-   Se carga cuando todavía no se ha subido ningún Master. Contiene sólo las
-   DOS tablas base; los resúmenes semanales y mensuales los calcula store.js.
-   ========================================================================== */
-(function (global) {
-  'use strict';
-  var PN = global.PN = global.PN || {};
-
-  var tiempos = [
+export const tiempos = [
 {"persona":"Jonathanyahir Santacruz","GUIANUMBER":"1","fecha_str":"2026-01-02","diff_minutes":51.0,"week_label":"Semana 1","mes":1,"SHIPMENTTYPE":"American Mail","comment":""},
 {"persona":"Jonathanyahir Santacruz","GUIANUMBER":"10","fecha_str":"2026-01-05","diff_minutes":36.0,"week_label":"Semana 2","mes":1,"SHIPMENTTYPE":"FDA,Regular","comment":""},
 {"persona":"Frida Martinez","GUIANUMBER":"100","fecha_str":"2026-01-29","diff_minutes":64.0,"week_label":"Semana 5","mes":1,"SHIPMENTTYPE":"Regular","comment":""},
@@ -601,9 +596,9 @@
 {"persona":"Alondra Barcelata","GUIANUMBER":"95","fecha_str":"2026-01-28","diff_minutes":74.0,"week_label":"Semana 5","mes":1,"SHIPMENTTYPE":"Regular","comment":""},
 {"persona":"Jonathanyahir Santacruz","GUIANUMBER":"96","fecha_str":"2026-01-28","diff_minutes":31.0,"week_label":"Semana 5","mes":1,"SHIPMENTTYPE":"FDA,Regular","comment":""},
 {"persona":"Marcoseduardo Robles","GUIANUMBER":"99","fecha_str":"2026-01-29","diff_minutes":9.0,"week_label":"Semana 5","mes":1,"SHIPMENTTYPE":"Canada Inbound","comment":""}
-  ];
+];
 
-  var manifiestos = [
+export const manifiestos = [
 {"GUIANUMBER":"10","fecha_docs":"2026-01-05","mes":1,"hora_docs":"06:59","dec_docs":6.983333333333333,"SHIPMENTTYPE":"FDA,Regular","week_label":"Semana 2","hora_trans":"07:15","dec_trans":7.25,"fecha_trans":"2026-01-05","nota_fecha":""},
 {"GUIANUMBER":"100","fecha_docs":"2026-01-29","mes":1,"hora_docs":"06:26","dec_docs":6.433333333333334,"SHIPMENTTYPE":"Regular","week_label":"Semana 5","hora_trans":"07:36","dec_trans":7.6,"fecha_trans":"2026-01-29","nota_fecha":""},
 {"GUIANUMBER":"101","fecha_docs":"2026-01-29","mes":1,"hora_docs":"06:27","dec_docs":6.45,"SHIPMENTTYPE":"FDA,Regular","week_label":"Semana 5","hora_trans":"07:38","dec_trans":7.633333333333333,"fecha_trans":"2026-01-29","nota_fecha":""},
@@ -1150,14 +1145,14 @@
 {"GUIANUMBER":"96","fecha_docs":"2026-01-28","mes":1,"hora_docs":"06:31","dec_docs":6.516666666666667,"SHIPMENTTYPE":"FDA,Regular","week_label":"Semana 5","hora_trans":"07:35","dec_trans":7.583333333333333,"fecha_trans":"2026-01-28","nota_fecha":""},
 {"GUIANUMBER":"98","fecha_docs":"2026-01-30","mes":1,"hora_docs":"10:41","dec_docs":10.683333333333334,"SHIPMENTTYPE":"Machine","week_label":"Semana 5","hora_trans":"17:51","dec_trans":17.85,"fecha_trans":"2026-01-29","nota_fecha":""},
 {"GUIANUMBER":"99","fecha_docs":"2026-01-29","mes":1,"hora_docs":"06:25","dec_docs":6.430277777777778,"SHIPMENTTYPE":"Canada Inbound","week_label":"Semana 5","hora_trans":"06:15","dec_trans":6.263888888888889,"fecha_trans":"2026-01-29","nota_fecha":""}
-  ];
+];
 
-  PN.DEMO = {
-    source: 'Master_3_de_julio.xlsx',
-    processedAt: '2026-07-03',
-    label: 'dataset demo · Ene–Jul 2026',
-    tiempos: tiempos,
-    manifiestos: manifiestos
-  };
+export const DEMO = {
+  source: 'Master_3_de_julio.xlsx',
+  processedAt: '2026-07-03',
+  label: 'dataset demo · Ene–Jul 2026',
+  tiempos: tiempos,
+  manifiestos: manifiestos
+};
 
-})(typeof window !== 'undefined' ? window : globalThis);
+export default DEMO;

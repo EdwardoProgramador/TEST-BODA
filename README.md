@@ -1,115 +1,151 @@
 # Reportes Import/Export — Pluma Nacional SA de CV
 
-Herramienta web para generar los reportes operativos del área de Import/Export a partir del
-**Master de Millennium Aduanas**. Sube el `.xlsx` y el tablero se recalcula completo en el navegador.
+Aplicación web para generar los reportes operativos del área de Documentación
+Import/Export a partir del **Master de Millennium** (`.xlsx`). Subes el archivo,
+la app lo procesa **íntegramente en tu navegador** y el tablero se actualiza:
+tiempos de documentación, shipping y el cruce entre ambos.
 
-```
-index.html        Documentación Import/Export   Elaboración de factura → Solicitud de carta porte
-shipping.html     Recepción de Documentos       A qué hora entrega Shipping docs y datos de transporte
-cross-data.html   Cross Data                    ¿La hora de llegada afecta el tiempo de elaboración?
-datos.html        Datos y validación            Carga del Master + comprobaciones de integridad
-```
-
-No hay paso de compilación: se abre `index.html` con doble clic o se publica la carpeta tal cual
-(GitHub Pages, un recurso compartido de red, cualquier servidor estático). Chart.js y SheetJS van
-incluidos en `assets/vendor/`, así que **funciona sin conexión** (sin internet las tipografías caen
-a las del sistema, nada más) y el Master nunca sale del navegador.
+> El archivo nunca sale de tu equipo. No hay servidor, no hay subida a la nube:
+> SheetJS lo lee en memoria y el resultado se guarda en `localStorage`.
 
 ---
 
-## Estructura
+## Arrancarla en tu computadora
 
-```
-assets/
-  css/app.css            Hoja de estilo única
-  js/
-    config.js            Calendario laboral, personas, hitos, paleta
-    stats.js             Estadística (auditable, con la fórmula documentada en cada función)
-    ingest.js            Pipeline de lectura del Master (SheetJS)
-    store.js             Dataset activo + derivación de todos los resúmenes
-    charts.js            Capa sobre Chart.js: tema, box plots, cartas de control, Pareto
-    ui.js                Cascarón compartido: barra, navegación, filtros, tooltips
-    page-*.js            Lógica de cada página
-  data/demo.js           Dataset de ejemplo (Master_3_de_julio: 592 guías + 546 recepciones)
-  vendor/                Chart.js 4.4.1 y SheetJS 0.18.5
-  img/logo.svg           Marcador del logotipo (ver assets/img/README.md)
+Necesitas [Node.js 18+](https://nodejs.org) (trae `npm` incluido).
+
+```bash
+npm install     # una sola vez
+npm run dev     # abre http://localhost:5173
 ```
 
-**Sólo se almacenan dos tablas base** — `tiempos` y `manifiestos`. Todos los resúmenes semanales
-y mensuales se calculan en tiempo de ejecución, así que no pueden desincronizarse del detalle.
-El dataset activo vive en `localStorage`, por eso sobrevive a la navegación entre páginas.
+`npm run dev` levanta el servidor local y abre el navegador solo. Cualquier
+cambio que guardes en `src/` se refleja al instante, sin recargar.
 
----
+### Los cuatro comandos
 
-## Cargar un Master nuevo
-
-1. Abrir **Datos y validación**.
-2. Arrastrar el `Master__XX.xlsx`. El registro muestra, paso a paso, cuántas filas se leyeron,
-   cuántas se descartaron y por qué.
-3. Pulsar **Usar este archivo**. Las tres páginas del tablero pasan a usarlo.
-4. Revisar las comprobaciones de integridad (duplicados, tiempos negativos, personas fuera de
-   catálogo, guías fuera del calendario laboral…).
-
-Los nombres de columna se detectan solos aunque cambien de mayúsculas, acentos o espacios.
-Para volver al ejemplo: **Volver al dataset demo**.
-
----
-
-## Reglas de negocio implementadas
-
-| Regla | Dónde |
+| Comando | Qué hace |
 |---|---|
-| Sólo `STATUSID = 8` (guías completadas) | `ingest.js` |
-| Calendario laboral lun–vie de 2026, con semanas de transición marcadas `*` | `config.js → WEEKS` |
-| Mar 30-31 pertenece a Abril S1; Abr 27–May 1 a Abril S5; Jun 29–Jul 3 a Junio S5 | `config.js → WEEKS` |
-| Personas que no operan de forma rutinaria quedan fuera | `config.js → PERSON_MAP` |
-| Correcciones manuales de autoría y de hora | `config.js → PERSON_FIX`, `HOUR_FIX` |
-| Shipping excluye American Mail y el 2 de enero | `ingest.js` |
-| Recepciones ≥ 12:00 hrs quedan en la tabla pero no promedian | `ingest.js` |
-| La guía se atribuye a quien la cierra (solicita la carta porte) | `ingest.js` |
+| `npm run dev` | Servidor local con recarga en caliente → `http://localhost:5173` |
+| `npm run build` | Compila a `dist/` (carpeta estática, lista para publicar) |
+| `npm run preview` | Sirve `dist/` para revisar el build antes de publicar |
+| `npm test` | 27 pruebas de las fórmulas estadísticas |
+
+El build usa rutas relativas y `HashRouter`, así que `dist/` funciona igual en la
+raíz de un dominio, en un subdirectorio, en GitHub Pages o abriendo el
+`index.html` directamente — sin configurar reescrituras en el servidor.
 
 ---
 
-## Correcciones estadísticas frente a la versión anterior
+## Cómo usarla
 
-La versión anterior del tablero tenía errores que hacían que varias gráficas dijeran algo distinto
-de lo que prometían. Cada uno está corregido y documentado en el código:
+1. Abre la app. Arranca con un **dataset de ejemplo** (Master del 3 de julio) para
+   que veas el tablero lleno desde el primer segundo.
+2. Ve a **Datos** y arrastra tu `Master__XX.xlsx`.
+3. Lee el registro de ingesta: te dice cuántas filas leyó, cuántas descartó y por
+   qué. Nada cambia hasta que pulses **«Usar este archivo»**.
+4. El dataset queda guardado en el navegador. Al volver a abrir la app sigue ahí.
+   **Reiniciar** te devuelve al ejemplo.
 
-| # | Problema | Corrección |
-|---|---|---|
-| 1 | Cuantiles con `Math.floor(n·p)`: sin interpolación y con off-by-one, afectando Q1/Q3, vallas de Tukey y todos los topes de eje | Interpolación lineal tipo 7 (el default de R y numpy) — `stats.quantile` |
-| 2 | Desviación **poblacional** (÷ n) usada como si fuera muestral | `stats.variance` divide entre n − 1 |
-| 3 | Límites de control μ ± 3σ con la σ global: los outliers ensanchaban los límites y el gráfico dejaba de señalar nada | Carta **I-MR**: σ̂ = MR̄ / 1.128 sobre el rango móvil |
-| 4 | La carta de shipping recortaba los límites a mano entre las 04:00 y las 12:00 | Los límites salen del proceso; el recorte visual va aparte y se avisa |
-| 5 | Promedio de promedios semanales sin ponderar por número de guías | Los resúmenes se derivan de las guías, no de otros promedios |
-| 6 | Histograma con bins de 15, 30 y 50 min dibujados del mismo ancho | Ancho constante por Freedman–Diaconis (h = 2·IQR·n^−1/3) |
-| 7 | Curva normal evaluada en el punto medio del bin y ajustada sólo con parte de los datos | Diferencia de CDF por bin, y se superpone también la **log-normal**, que es la que describe estos tiempos |
-| 8 | Pareto ordenado por conteo mientras el texto prometía mostrar dónde se concentra el tiempo | Selector explícito: volumen o minutos acumulados |
-| 9 | El "box plot" sólo dibujaba la caja: bigotes y outliers se calculaban pero nunca se pintaban | Box plot completo, con bigotes al dato real dentro de las vallas y outliers visibles |
-| 10 | Media móvil rezagada etiquetada como tendencia: desplazaba los puntos de inflexión | Media móvil **centrada** [i−1, i, i+1] |
-| 11 | "↓ 47.5 %" sin prueba de significancia ni intervalo | **U de Mann-Whitney** con corrección por empates + **IC 95 % por bootstrap** (4 000 réplicas, semilla fija) |
-| 12 | Correlación reportada sin n ni p-valor | Pearson **y** Spearman, ambos con n y p (transformación z de Fisher), y un veredicto en español llano |
-| 13 | Seriales de Excel convertidos por aritmética sobre epoch UTC: desplazaba cada hora según el huso del navegador | Descomposición del serial y construcción en hora local |
+### Qué hace exactamente con el archivo
 
-La estadística está aislada en `assets/js/stats.js` y no depende del DOM: se puede auditar con Node.
+- Detecta las columnas por nombre (`GUIANUMBER`, `ACTIVITY_ESA`, `STATUSID`,
+  `CREATEDBY`, `SHIPMENTTYPE`, fecha/hora…), sin depender del orden.
+- Se queda solo con `STATUSID = 8` y con fechas dentro del calendario laboral 2026.
+- **Tiempos**: guías con factura *y* solicitud de carta porte. La guía se le
+  atribuye a quien cierra el par (quien solicita la carta porte).
+- **Shipping**: guías con recepción de documentos registrada. Excluye
+  *American Mail* y el 2 de enero.
+- Aplica `PERSON_MAP` / `PERSON_FIX` / `HOUR_FIX` (correcciones documentadas de
+  usuarios y horas mal capturadas en Millennium).
+
+---
+
+## Estructura del proyecto
+
+```
+├── index.html              punto de entrada de Vite
+├── vite.config.js          build, chunks de vendors, servidor local
+├── public/logo.svg         placeholder del logo (reemplázalo por el real)
+└── src/
+    ├── main.jsx            arranque: HashRouter + DataProvider
+    ├── App.jsx             rutas
+    ├── lib/
+    │   ├── calendar.js     calendario laboral 2026, personas, hitos, colores
+    │   ├── stats.js        estadística pura, sin DOM (lo que prueba npm test)
+    │   ├── ingest.js       Master → dataset (detección de columnas + reglas)
+    │   ├── derive.js       resúmenes: por semana, mes, persona, tipo
+    │   ├── demo.js         dataset de ejemplo
+    │   └── format.js       formateo de horas, decimales y porcentajes
+    ├── charts/builders.js  configuraciones de Chart.js (sin tocar el DOM)
+    ├── components/         Layout, ChartCanvas y los bloques de UI
+    ├── state/DataContext.jsx  dataset activo + periodo seleccionado
+    ├── pages/              Tiempos · Shipping · CrossData · Datos
+    └── styles/app.css      tema completo
+```
+
+**Cómo está separado**: `lib/` no sabe que existe React ni el navegador — son
+funciones puras, y por eso se pueden probar desde Node. `charts/` devuelve
+objetos de configuración, no dibuja. `ChartCanvas` es el **único** sitio donde se
+instancia Chart.js, y destruye la instancia al desmontar (de ahí que no haya
+fugas de memoria al cambiar de pestaña). Las páginas solo componen.
+
+### Rutas
+
+| Ruta | Reporte |
+|---|---|
+| `#/` | Documentación Import/Export (factura → carta porte) |
+| `#/shipping` | Shipping (recepción → entrega a transporte) |
+| `#/cross-data` | Cruce: ¿la hora de llegada de documentos explica el tiempo de elaboración? |
+| `#/datos` | Carga del Master, validaciones y exportación |
+
+Cada reporte tiene dos pestañas: **Operativo** (lo que se presenta) y **Análisis
+estadístico** (lo que lo sostiene).
+
+---
+
+## Correcciones estadísticas
+
+El tablero original tenía fórmulas que daban resultados incorrectos. Esto es lo
+que se corrigió y por qué importa:
+
+| Cálculo | Antes | Ahora | Por qué |
+|---|---|---|---|
+| **Percentiles** | índice truncado | interpolación lineal (tipo 7, la de R/numpy) | Con n pequeño el cuartil saltaba de golpe entre valores |
+| **Varianza** | dividía entre *n* | entre *n − 1* | La de la población subestima la dispersión de una muestra |
+| **Límites de control** | μ ± 3σ | carta I-MR con σ̂ = MR̄ / 1.128 | σ global se infla con los propios outliers y deja de detectarlos |
+| **Bigotes del box plot** | mín/máx absolutos | último dato dentro de las vallas de Tukey | Los bigotes no deben ser los outliers |
+| **Antes vs. después** | comparaba promedios | Mann-Whitney U + IC bootstrap | Los tiempos son muy asimétricos; el promedio no representa nada |
+| **Correlación** | solo *r* de Pearson | Pearson + Spearman con *p* por z de Fisher | Sin *p* no se sabe si *r* es señal o ruido |
+| **Histograma** | 10 bins fijos | regla de Freedman–Diaconis | El número de bins cambiaba la forma de la distribución |
+| **Media móvil** | rezagada | centrada | La rezagada desplaza los puntos de quiebre |
+| **Fechas de Excel** | `(n−25569)×86400×1000` | descomposición del serial en hora local | El instante UTC hacía que `getHours()` corriera las horas según la zona horaria del navegador |
+
+**Ejemplo concreto**: en la serie de junio hay una guía de 900 minutos. μ + 3σ
+la deja *dentro* de los límites (porque ella misma infló σ). La carta I-MR la
+marca como fuera de control, que es lo correcto.
+
+`npm test` verifica 27 asertos contra valores calculados en R/numpy, no contra la
+propia implementación.
 
 ---
 
 ## Verificación
 
-La derivación de los resúmenes se contrastó contra los números del tablero anterior:
-
-- Los 27 promedios semanales globales coinciden **exactamente** (27/27), igual que sus conteos.
-- Mediana global 26 min y promedio 66.3 min: idénticos a lo documentado.
-- Medianas por persona idénticas a la tabla de referencia.
-- 592 guías de tiempos, el mismo total del reporte original.
-
-Las diferencias que sí existen son intencionadas y están explicadas arriba: por ejemplo la mediana
-post-interfaz es 16.5 min (el reporte anterior mostraba «16» por truncamiento) y los límites de
-control cambian porque el método es otro.
+- **27/27** asertos estadísticos en verde.
+- Los resúmenes semanales reproducen el tablero original **27/27 exactos**
+  (valores y conteos): mediana global 26 min, promedio 66.3 min, y todas las
+  medianas por persona idénticas a la tabla de referencia.
+- Prueba de extremo a extremo con un Master sintético de 2,273 filas (con ruido
+  que debe descartarse): recupera exactamente **592** guías de tiempos, **546**
+  de shipping y **540** cruzadas.
+- Las cuatro rutas cargan **sin errores de JS**, en `dev` y en el build.
 
 ---
 
-## Créditos
+## Pendientes
 
-Import/Export Assistant · Pluma Nacional SA de CV
+- Sustituir `public/logo.svg` por el logo real de Pluma Nacional.
+- El calendario laboral llega al 3 de julio de 2026; hay que extenderlo para
+  seguir cargando Masters posteriores (`src/lib/calendar.js`).
+- Decidir si se restaura la exportación a Excel de 9 hojas.

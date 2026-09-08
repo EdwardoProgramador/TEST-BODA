@@ -1,0 +1,24 @@
+{
+  "name": "reportes-import-export",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Reportes operativos de Import/Export — Pluma Nacional SA de CV",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "node scripts/test-stats.js"
+  },
+  "dependencies": {
+    "chart.js": "^4.4.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.26.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}
